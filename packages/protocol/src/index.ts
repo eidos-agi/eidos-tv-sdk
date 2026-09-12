@@ -61,6 +61,18 @@ export interface PlaybackState {
 }
 
 export interface TvState {
+  life?: {
+    draft: string;
+    selected?: string;
+    nextId: number;
+    jobs: Array<{
+      id: string;
+      text: string;
+      status: "queued" | "working" | "completed" | "cancelled" | "blocked";
+      elapsedMs: number;
+      result?: string;
+    }>;
+  };
   power: "on" | "off";
   route:
     | "home"

@@ -12,6 +12,7 @@ import {
   Session,
   SCENARIOS,
   toolNames,
+  applicationId,
   TOOL_SCHEMAS,
   replay,
   configSchema,
@@ -56,7 +57,7 @@ export class Broker {
       result: evaluate(s),
       scenario: SCENARIOS.find((v) => v.id === s.config.scenarioId),
       lease: this.leases.has(id),
-      tools: toolNames(s.config.authority),
+      tools: toolNames(s.config.authority, applicationId(s.config.scenarioId)),
     };
   }
   publicProjection(id: string) {
@@ -66,7 +67,7 @@ export class Broker {
       observation: s.observe(),
       scenario: SCENARIOS.find((v) => v.id === s.config.scenarioId),
       authority: s.config.authority,
-      tools: toolNames(s.config.authority),
+      tools: toolNames(s.config.authority, applicationId(s.config.scenarioId)),
     };
   }
   grant(id: string, revision?: number) {
@@ -169,18 +170,21 @@ export class Broker {
     );
   }
   tools(id: string) {
-    return toolNames(this.session(id).config.authority).map((name) => ({
-      name,
-      description: name.startsWith("remote.")
-        ? `Operate the session's virtual remote: ${name}.`
-        : `${name} in this session.`,
-      inputSchema: z.toJSONSchema(TOOL_SCHEMAS[name]),
-      annotations: {
-        readOnlyHint: /observe|get/.test(name),
-        destructiveHint: false,
-        idempotentHint: /observe|get/.test(name),
-      },
-    }));
+    const config = this.session(id).config;
+    return toolNames(config.authority, applicationId(config.scenarioId)).map(
+      (name) => ({
+        name,
+        description: name.startsWith("remote.")
+          ? `Operate the session's virtual remote: ${name}.`
+          : `${name} in this session.`,
+        inputSchema: z.toJSONSchema(TOOL_SCHEMAS[name]),
+        annotations: {
+          readOnlyHint: /observe|get/.test(name),
+          destructiveHint: false,
+          idempotentHint: /observe|get/.test(name),
+        },
+      }),
+    );
   }
   save(id: string) {
     const file = join(this.directory, `${id}.json`);

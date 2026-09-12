@@ -1,104 +1,73 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { LifeCenter } from "../apps/server/src/life";
-import { createLabServer } from "../apps/server/src/server";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-test("Life Center remote delegates, survives screen sleep/restart, and supports cancellation", () => {
-  const dir = mkdtempSync(join(tmpdir(), "life-test-"));
-  let now = 10000;
-  try {
-    let life = new LifeCenter(dir, () => now);
-    life.call("life.remote", { key: "Right" });
-    let state = life.call("life.remote", { key: "Select" });
-    assert.equal(state.jobs[0].kind, "travel");
-    assert.equal(state.jobs[0].status, "queued");
-    const id = state.jobs[0].id;
-    life.call("life.remote", { key: "Power" });
-    now += 2000;
-    life = new LifeCenter(dir, () => now);
-    assert.equal(life.observe().power, false);
-    assert.equal(life.observe().jobs[0].status, "working");
-    now += 3000;
-    assert.equal(life.observe().jobs[0].status, "completed");
-    assert.match(life.observe().jobs[0].result!, /No bookings/);
-    assert.throws(() => life.call("life.cancel", { id }), /FINISHED/);
-    state = life.call("life.request", { text: "Unrecognized specific job" });
-    life.call("life.cancel", { id: state.jobs[0].id });
-    now += 10000;
-    assert.equal(life.observe().jobs[0].status, "cancelled");
-    assert.throws(() => life.call("life.request", { text: "  " }));
-    assert.throws(() => life.call("life.open", { id: "missing" }));
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+import { Session, NO_FAULTS, replay, toolNames } from "@eidos-tv/core";
+import { evaluate } from "../apps/server/src/evaluator";
+const agent = { id: "agent", kind: "agent", transport: "mcp" } as const;
+test("example uses common authority, deduplication, logical time, and replay", () => {
+  const s = new Session({ scenarioId: "life-request" });
+  assert.throws(
+    () => s.dispatch(agent, "tv.requestJob", { text: "Prepare my next trip" }),
+    /AUTHORITY_DENIED/,
+  );
+  s.dispatch(agent, "remote.type", { text: "Prepare my next trip" });
+  s.dispatch(agent, "remote.press", { key: "SELECT" }, "submit");
+  s.dispatch(agent, "remote.press", { key: "SELECT" }, "submit");
+  assert.equal(s.snapshot().life?.jobs.length, 1);
+  s.dispatch(agent, "remote.press", { key: "POWER" });
+  s.dispatch(agent, "session.wait", { ms: 5000 });
+  assert.equal(s.snapshot().life?.jobs[0].status, "completed");
+  assert.deepEqual(replay(s.export()).snapshot(), s.snapshot());
+  assert.equal(
+    toolNames("remote-only", "life-center").includes("tv.requestJob"),
+    false,
+  );
 });
-test("Life MCP and HTTP share jobs and deny unauthenticated and session-only clients", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "life-api-"));
-  const lab = createLabServer({
-    directory: dir,
-    staticDir: resolve("apps/lab/dist"),
-  });
-  await new Promise<void>((r) => lab.server.listen(0, "127.0.0.1", r));
-  const base = `http://127.0.0.1:${(lab.server.address() as { port: number }).port}`;
-  const client = new Client({ name: "life-test", version: "1" });
-  const headers = {
-    Authorization: `Bearer ${lab.operatorToken}`,
-    "Content-Type": "application/json",
-  };
-  try {
-    assert.equal((await fetch(base + "/api/life")).status, 401);
-    const session = await (
-      await fetch(base + "/api/sessions", {
-        method: "POST",
-        headers,
-        body: "{}",
-      })
-    ).json();
-    const grant = await (
-      await fetch(base + `/api/sessions/${session.id}/grant`, {
-        method: "POST",
-        headers,
-        body: "{}",
-      })
-    ).json();
-    assert.equal(
-      (
-        await fetch(base + "/api/life", {
-          headers: { Authorization: `Bearer ${grant.token}` },
-        })
-      ).status,
-      403,
-    );
-    await client.connect(
-      new StreamableHTTPClientTransport(new URL(base + "/life-mcp"), {
-        requestInit: { headers },
-      }),
-    );
-    assert.equal((await client.listTools()).tools.length, 5);
-    await client.callTool({
-      name: "life.request",
-      arguments: { text: "Prepare my next trip" },
+test("voice delay, low confidence, disconnect, and worker faults apply to the example", () => {
+  for (const fault of ["stt", "timeout", "packetLoss"] as const) {
+    const s = new Session({
+      scenarioId: "life-voice",
+      latencyMs: 500,
+      faults: { ...NO_FAULTS, [fault]: true },
     });
-    const view = await (await fetch(base + "/api/life", { headers })).json();
-    assert.equal(view.jobs.length, 1);
-    assert.equal(view.jobs[0].text, "Prepare my next trip");
-    await client.callTool({
-      name: "life.cancel",
-      arguments: { id: view.jobs[0].id },
+    s.dispatch(agent, "remote.pttStart", { sessionId: "v" });
+    s.dispatch(agent, "remote.pttSpeak", {
+      sessionId: "v",
+      text: "Prepare my next trip",
+      confidence: 1,
     });
-    assert.equal(
-      (await (await fetch(base + "/api/life", { headers })).json()).jobs[0]
-        .status,
-      "cancelled",
-    );
-  } finally {
-    await client.close();
-    lab.server.closeAllConnections();
-    await new Promise<void>((r) => lab.server.close(() => r()));
-    rmSync(dir, { recursive: true, force: true });
+    s.dispatch(agent, "session.wait", { ms: 6000 });
+    assert.equal(s.snapshot().life?.jobs.length, 0);
+    assert.equal(evaluate(s).success, false);
+    assert.deepEqual(replay(s.export()).snapshot(), s.snapshot());
   }
+  const offline = new Session({
+    scenarioId: "life-request",
+    authority: "semantic",
+    faults: { ...NO_FAULTS, crash: true },
+  });
+  offline.dispatch(agent, "tv.requestJob", { text: "Prepare my next trip" });
+  offline.dispatch(agent, "session.wait", { ms: 30000 });
+  assert.equal(offline.snapshot().life?.jobs[0].status, "blocked");
+  assert.equal(evaluate(offline).success, false);
+  const disconnected = new Session({
+    scenarioId: "life-request",
+    faults: { ...NO_FAULTS, disconnect: true },
+  });
+  assert.throws(
+    () => disconnected.dispatch(agent, "remote.type", { text: "hello" }),
+    /DISCONNECTED/,
+  );
+});
+test("dropped and duplicated keys are visible in the example trace", () => {
+  const s = new Session({
+    scenarioId: "life-request",
+    faults: { ...NO_FAULTS, drop: true, duplicate: true },
+  });
+  s.dispatch(agent, "remote.type", { text: "Prepare my next trip" });
+  s.dispatch(agent, "remote.press", { key: "SELECT" });
+  assert.equal(s.snapshot().life?.jobs.length, 0);
+  s.dispatch(agent, "remote.press", { key: "SELECT" });
+  assert.equal(s.snapshot().life?.jobs.length, 1);
+  assert.equal(s.trace.filter((e) => e.type === "fault.injected").length, 2);
+  assert.deepEqual(replay(s.export()).snapshot(), s.snapshot());
 });

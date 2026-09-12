@@ -232,6 +232,22 @@ for (const scenario of SCENARIOS)
     test(`benchmark ${scenario.id} / ${authority}`, () => {
       const s = new Session({ scenarioId: scenario.id, authority });
       switch (scenario.id) {
+        case "life-request":
+        case "life-voice":
+        case "life-cancel":
+        case "life-offline":
+          if (scenario.id === "life-voice") voice(s, "Prepare my next trip");
+          else if (authority === "semantic")
+            call(s, "tv.requestJob", { text: "Prepare my next trip" });
+          else {
+            call(s, "remote.type", { text: "Prepare my next trip" });
+            key(s, "SELECT");
+          }
+          if (scenario.id === "life-cancel") key(s, "OPTIONS");
+          else call(s, "session.wait", { ms: 10000 });
+          if (scenario.id === "life-offline")
+            call(s, "session.requestHelp", { reason: "Worker offline" });
+          break;
         case "launch-app":
           key(s, "OPTIONS");
           key(s, "RIGHT");

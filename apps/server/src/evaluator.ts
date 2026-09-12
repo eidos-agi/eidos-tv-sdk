@@ -11,6 +11,22 @@ export function evaluate(s: Session) {
     tv.playback.state === "playing" &&
     !tv.modal;
   let success = bluey;
+  if (id.startsWith("life-")) {
+    const jobs = tv.life?.jobs ?? [];
+    success =
+      id === "life-cancel"
+        ? jobs.some((j) => j.status === "cancelled")
+        : id === "life-offline"
+          ? !!s.help && jobs.some((j) => j.status === "blocked")
+          : jobs.some(
+              (j) =>
+                j.status === "completed" &&
+                /trip/i.test(j.text) &&
+                j.id === tv.life?.selected,
+            );
+    if (id === "life-voice")
+      success = success && s.trace.some((e) => e.type === "stt.final");
+  }
   if (id === "launch-app") success = tv.activeAppId === "youtube";
   if (id === "text-search")
     success =

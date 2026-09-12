@@ -342,3 +342,61 @@ test("late reset is rejected without replacing the newer session", async () => {
     await lab.close();
   }
 });
+test("application MCP shares session state, replays jobs and revokes on application switch", async () => {
+  const lab = await setup();
+  const client = new Client({ name: "app-test", version: "1" });
+  try {
+    const session = await (
+      await req(lab, "/api/sessions", {
+        scenarioId: "life-request",
+        authority: "semantic",
+      })
+    ).json();
+    const grant = await (
+      await req(lab, `/api/sessions/${session.id}/grant`, {})
+    ).json();
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(lab.base + "/mcp"), {
+        requestInit: { headers: { Authorization: `Bearer ${grant.token}` } },
+      }),
+    );
+    const tools = await client.listTools();
+    assert.ok(tools.tools.some((t) => t.name === "tv.requestJob"));
+    assert.ok(!tools.tools.some((t) => t.name === "tv.openContent"));
+    await client.callTool({
+      name: "tv.requestJob",
+      arguments: { text: "Prepare my next trip" },
+    });
+    await client.callTool({ name: "session.wait", arguments: { ms: 5000 } });
+    const view = await (await req(lab, `/api/sessions/${session.id}`)).json();
+    assert.equal(view.observation.tv.life.jobs[0].status, "completed");
+    assert.equal(view.result.success, true);
+    const trace = await (
+      await req(lab, `/api/sessions/${session.id}/trace`)
+    ).json();
+    const restored = await (
+      await req(lab, `/api/sessions/${session.id}/restore`, {})
+    ).json();
+    assert.equal(restored.observation.tv.life.jobs[0].status, "completed");
+    assert.equal(trace.finalStateHash, restored.result.finalStateHash);
+    assert.equal(
+      (await req(lab, "/api/life", undefined, lab.operatorToken)).status,
+      410,
+    );
+    const switched = await (
+      await req(lab, `/api/sessions/${session.id}/reset`, {
+        ...session.config,
+        scenarioId: "play-bluey",
+      })
+    ).json();
+    assert.equal(switched.observation.tv.life, undefined);
+    assert.equal(
+      (await req(lab, `/api/sessions/${session.id}`, undefined, grant.token))
+        .status,
+      401,
+    );
+  } finally {
+    await client.close();
+    await lab.close();
+  }
+});

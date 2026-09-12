@@ -4,11 +4,12 @@ The product is the TV testing lab: realistic TV/remote interaction, multiple app
 
 ## Next priority: applications under test
 
-- Add a common application selector and application adapter contract to the lab.
-- Integrate Life Center as one selectable example alongside existing media scenarios.
-- Route each example through the lab's shared input, authority, observation, fault, trace, and replay facilities. The separate Life Center preview does not yet satisfy this integration.
-- Support mocked and real agent backends per scenario, with explicit labels and test outcomes.
-- Keep fast local testing and realistic remote/voice interaction as acceptance requirements.
+- [x] Common application selector and documented built-in application contract.
+- [x] Life Center selectable alongside existing media scenarios.
+- [x] Shared input, authority, observation, supported faults, trace, capture, and replay facilities for both built-in applications.
+- [ ] General application import/plugin loading beyond the two built-in adapters.
+- [ ] Real agent backends per scenario, with explicit labels and test outcomes. Current runners and workers are simulated/scripted.
+- [ ] Continue improving realistic remote/voice interaction while keeping fast local testing as an acceptance requirement.
 
 ## Current delivery — 2026-09-12
 

@@ -10,7 +10,11 @@ import type { AuthorityMode, RemoteKey, TvState } from "@eidos-tv/protocol";
 import { registerWebMCP } from "./webmcp";
 import { download, snapshot, record } from "./capture";
 import "./styles.css";
-import { LifeApp } from "./life";
+import {
+  APPLICATIONS,
+  applicationId,
+  LIFE_PROMPTS,
+} from "@eidos-tv/core/applications";
 const fragment = new URLSearchParams(location.hash.slice(1));
 const operatorToken = fragment.get("operator");
 const agentToken = fragment.get("agent");
@@ -345,7 +349,36 @@ function App() {
       };
       await step("tv.observe");
       const scenario = view.config.scenarioId;
-      if (["signed-out", "parental-pin", "purchase"].includes(scenario))
+      if (applicationId(scenario) === "life-center") {
+        if (scenario === "life-voice") {
+          const sessionId = uid();
+          await step("remote.pttStart", { sessionId });
+          await step("remote.pttSpeak", {
+            sessionId,
+            text: "Prepare my next trip",
+            confidence: 1,
+          });
+          if (view.config.latencyMs)
+            await step("session.wait", { ms: view.config.latencyMs });
+          await step("remote.pttStop", { sessionId });
+        } else if (mode === "semantic")
+          await step("tv.requestJob", { text: "Prepare my next trip" });
+        else {
+          await step("remote.type", { text: "Prepare my next trip" });
+          await step("remote.press", { key: "SELECT" });
+        }
+        if (scenario === "life-cancel")
+          await step("remote.press", { key: "OPTIONS" });
+        else {
+          await step("session.wait", { ms: 10000 });
+          const observed = (await step("tv.observe")) as View["observation"];
+          if (observed.tv.life?.jobs.some((j) => j.status === "blocked"))
+            await step("session.requestHelp", {
+              reason:
+                "The simulated worker is unavailable. Please restore its connection.",
+            });
+        }
+      } else if (["signed-out", "parental-pin", "purchase"].includes(scenario))
         await step("session.requestHelp", {
           reason: "Please provide sign-in or approval before playback.",
         });
@@ -526,7 +559,30 @@ function App() {
         {operator && config && (
           <aside className="panel session-panel">
             <h2>Session configuration</h2>
-            <p className="meta">Generic Streaming TV · Voice remote</p>
+            <p className="meta">Generic TV · Voice remote</p>
+            <Field label="Application under test">
+              <select
+                value={applicationId(config.scenarioId)}
+                onChange={(e) => {
+                  const life = e.target.value === "life-center";
+                  setTranscript(
+                    life
+                      ? "Prepare my next trip"
+                      : "Play episode three of Bluey",
+                  );
+                  setQuery(life ? "Prepare my next trip" : "Bluey");
+                  void reset({
+                    scenarioId: life ? "life-request" : "play-bluey",
+                  }).catch(fail);
+                }}
+              >
+                {APPLICATIONS.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Scenario">
               <select
                 value={config.scenarioId}
@@ -534,11 +590,16 @@ function App() {
                   void reset({ scenarioId: e.target.value }).catch(fail)
                 }
               >
-                {scenarios.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
+                {scenarios
+                  .filter(
+                    (s) =>
+                      applicationId(s.id) === applicationId(config.scenarioId),
+                  )
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label="Agent access">
@@ -556,7 +617,12 @@ function App() {
             </Field>
             <Field label="Network">
               <select
-                value={config.network}
+                value={
+                  config.scenarioId === "life-offline"
+                    ? "offline"
+                    : config.network
+                }
+                disabled={config.scenarioId === "life-offline"}
                 onChange={(e) =>
                   void reset({ network: e.target.value }).catch(fail)
                 }
@@ -578,34 +644,45 @@ function App() {
               />
             </Field>
             <h3>Fault injection</h3>
-            {Object.entries(config.faults).map(([name, checked]) => (
-              <label className="option" key={name}>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() =>
-                    void reset({
-                      faults: { ...config.faults, [name]: !checked },
-                    }).catch(fail)
+            {Object.entries(config.faults)
+              .filter(([name]) =>
+                (
+                  APPLICATIONS.find(
+                    (a) => a.id === applicationId(config.scenarioId),
+                  )!.faults as readonly string[]
+                ).includes(name),
+              )
+              .map(([name, checked]) => (
+                <label className="option" key={name}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      void reset({
+                        faults: { ...config.faults, [name]: !checked },
+                      }).catch(fail)
+                    }
+                  />
+                  {
+                    (
+                      {
+                        stt: "Low-confidence STT",
+                        drop: "Drop next key",
+                        duplicate: "Duplicate next key",
+                        disconnect: "Remote disconnected",
+                        crash:
+                          applicationId(config.scenarioId) === "life-center"
+                            ? "Worker unavailable"
+                            : "Crash once",
+                        purchase: "Purchase gate",
+                        pin: "Parental PIN",
+                        timeout: "STT timeout",
+                        packetLoss: "Audio packet loss",
+                      } as Record<string, string>
+                    )[name]
                   }
-                />
-                {
-                  (
-                    {
-                      stt: "Low-confidence STT",
-                      drop: "Drop next key",
-                      duplicate: "Duplicate next key",
-                      disconnect: "Remote disconnected",
-                      crash: "Crash once",
-                      purchase: "Purchase gate",
-                      pin: "Parental PIN",
-                      timeout: "STT timeout",
-                      packetLoss: "Audio packet loss",
-                    } as Record<string, string>
-                  )[name]
-                }
-              </label>
-            ))}
+                </label>
+              ))}
             <button
               className="primary full"
               disabled={
@@ -957,6 +1034,75 @@ function App() {
     </div>
   );
 }
+function LabLifeView({ state }: { state: TvState }) {
+  const list = useRef<HTMLDivElement>(null);
+  const life = state.life!;
+  useEffect(() => {
+    list.current
+      ?.querySelector(".app-focused")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [state.focusIndex]);
+  const selected = life.jobs.find((j) => j.id === life.selected);
+  return (
+    <div className="lab-life">
+      <span className="eyebrow">
+        APPLICATION UNDER TEST · LIFE CENTER · SIMULATED WORKER
+      </span>
+      <h1>{selected ? "Delegated work" : "What would you like help with?"}</h1>
+      <p className="app-hint">
+        {selected
+          ? "Options: cancel pending job · Back: return"
+          : "Arrows: choose · OK: submit/open · Speak or send text from the remote"}
+      </p>
+      {selected ? (
+        <section className="app-result">
+          <h2>{selected.text}</h2>
+          <strong>{selected.status.toUpperCase()}</strong>
+          <p>
+            {selected.result ??
+              (selected.status === "blocked"
+                ? "Worker unavailable. Inspect network/fault settings or request human help."
+                : selected.status === "cancelled"
+                  ? "This job was cancelled."
+                  : "Advance the lab clock to simulate worker progress.")}
+          </p>
+        </section>
+      ) : (
+        <>
+          {life.draft && (
+            <div className="app-draft">
+              Instruction: {life.draft} · Press OK to submit
+            </div>
+          )}
+          <div className="app-prompts">
+            {LIFE_PROMPTS.map((p, i) => (
+              <div
+                key={p}
+                className={state.focusIndex === i ? "app-focused" : ""}
+              >
+                {p}
+              </div>
+            ))}
+          </div>
+          <div className="app-jobs" ref={list}>
+            {life.jobs.map((j, i) => (
+              <div
+                key={j.id}
+                className={state.focusIndex === i + 3 ? "app-focused" : ""}
+              >
+                <strong>{j.text}</strong>
+                <span>{j.status}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <p className="app-disclaimer">
+        Sample responses only · No personal accounts or external actions
+      </p>
+    </div>
+  );
+}
 function TvView({
   state,
   selected,
@@ -966,6 +1112,7 @@ function TvView({
 }) {
   if (state.power === "off")
     return <div className="tv-off">EIDOS TV · OFF</div>;
+  if (state.life) return <LabLifeView state={state} />;
   const overlay = state.modal ? (
     <Modal type={state.modal} focus={state.focusIndex} />
   ) : !state.signedIn ? (
@@ -1222,18 +1369,4 @@ function Field({
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(
-  location.pathname === "/home" ? (
-    <LifeApp />
-  ) : (
-    <>
-      <a
-        style={{ display: "block", padding: "10px 24px", color: "#cfe5ad" }}
-        href={`/home${location.hash}`}
-      >
-        Example app: Life Center →
-      </a>
-      <App />
-    </>
-  ),
-);
+createRoot(document.getElementById("root")!).render(<App />);

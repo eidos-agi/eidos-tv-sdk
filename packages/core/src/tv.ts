@@ -1,4 +1,5 @@
 import type { RemoteEvent, RemoteKey, TvState } from "@eidos-tv/protocol";
+import { reduceLife, LIFE_PROMPTS } from "./applications";
 export interface ContentCard {
   id: string;
   title: string;
@@ -134,6 +135,8 @@ export function reduceRemoteEvent(
   state: TvState,
   input: RemoteEvent,
 ): TransitionResult {
+  const applicationResult = reduceLife(state, input);
+  if (applicationResult) return applicationResult;
   const next = structuredClone(state);
   const events: TransitionResult["events"] = [];
   if (input.type === "ptt") {
@@ -366,6 +369,14 @@ export function launchApp(state: TvState, appId: string): TransitionResult {
   return { state: next, events: [event("app.launch", appId)] };
 }
 export function currentFocusLabel(state: TvState): string {
+  if (state.life)
+    return state.life.selected
+      ? "Job details · Options cancels · Back returns"
+      : state.life.draft
+        ? "Submit instruction"
+        : (LIFE_PROMPTS[state.focusIndex] ??
+          state.life.jobs[state.focusIndex - 3]?.text ??
+          "Life Center");
   if (state.modal === "profile")
     return state.focusIndex === 0 ? "Daniel" : "Kids";
   if (state.route === "home")
