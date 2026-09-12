@@ -87,6 +87,19 @@ function App() {
   const pending = useRef(Promise.resolve());
   const runnerToken = useRef<string | undefined>(undefined);
   function show(v: View) {
+    const current = viewRef.current;
+    if (
+      current?.id === v.id &&
+      current.revision !== undefined &&
+      v.revision !== undefined
+    ) {
+      if (v.revision < current.revision) return;
+      if (
+        v.revision === current.revision &&
+        v.observation.timeMs < current.observation.timeMs
+      )
+        return;
+    }
     viewRef.current = v;
     setView(v);
   }
