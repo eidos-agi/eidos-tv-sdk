@@ -15,6 +15,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "npm run typecheck && npm test && npm run build",
     "test:browser": "node --import tsx tests/browser-smoke.ts",
+    "test:life": "node --import tsx tests/life-browser.ts",
     "format:check": "prettier --check 'apps/*/src/**/*.{ts,tsx}' 'packages/*/src/**/*.ts' 'tests/*.ts'"
   },
   "engines": {
