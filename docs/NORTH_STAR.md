@@ -1,14 +1,14 @@
-# Product North Star — Personal AI Life Center
+# Product North Star — TV Testing Lab
 
-Daniel is the first user. The TV is the home interface to a personal AI system: requests, briefings, delegated work, decisions, and results. The person can continue with the same system when traveling. Entertainment is not the purpose of this product.
+The product is a realistic TV and remote testing lab. Daniel is the first user. The lab lets humans and agents operate virtual remotes or connect directly to virtual TV systems, exercise voice/text interactions, and test different applications and agent behaviors locally with fast iteration.
 
-Develop locally for fast iteration. Make remote navigation and voice interaction convincing. Use explicitly labeled simulated workers to test the experience before connecting real agents and cloud systems. Keep identity, memory, and jobs independent of the TV client; eventual clients may include Roku and Android TV. No compatibility with those platforms is implied by the web emulator.
+Life Center is one example application and test workload among many, alongside media navigation, voice-driven tasks, and other TV applications. Its personal-AI vision motivates a test case; it does not define the lab's product scope. Simulated responses are acceptable when clearly labeled. Eventual Roku or Android TV applications can be developed and validated through the lab; platform compatibility still requires separate proof.
 
-The next acceptance experience is: open the Life Center, submit an instruction with voice or text, see it delegated, review its result with the remote, and find the job still available after leaving and returning. A mocked worker proves interaction and orchestration shape, not real AI capability or cloud execution.
+Success means a convincing TV/remote experience with configurable applications, scenarios, agent connections, input paths, observations, and repeatable tests. An application-specific demo must not replace the lab. The existing Life Center preview is currently a separate example route; integrating it into common scenario selection, faults, traces, and replay remains work to do.
 
-## Supporting device lab
+## Primary product: device lab
 
-The device lab remains the instrument panel for testing input, permissions, and device behavior alongside the Life Center experience.
+The device lab is the main interface. Example applications are systems under test within its development and evaluation workflow.
 
 The approved product shape is the Device Lab mockup: a TV in the center, a visible remote beside it, scenario and fault controls on the left, an agent runner and hidden evaluator on the right, and trace/capture/PTT tooling below the TV.
 
