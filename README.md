@@ -135,3 +135,6 @@ The first useful build should contain:
 - replay and basic grading.
 
 See `docs/ARCHITECTURE.md` and `docs/ROADMAP.md` for the build contract.
+# Personal AI Life Center preview
+
+Start the local server and open its operator link, then select **Open Life Center**. This is the new product direction: a personal AI home interface with remote navigation, voice/text requests, and persistent simulated delegated jobs. See [Life Center setup and boundaries](docs/LIFE_CENTER.md). The original device lab remains available for testing.

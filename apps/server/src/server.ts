@@ -15,6 +15,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { replay, SCENARIOS, configSchema } from "@eidos-tv/core";
 import { Broker } from "./broker";
+import { LifeCenter, lifeTools } from "./life";
 const actionSchema = z
   .object({
     name: z.string().max(80),
@@ -74,6 +75,7 @@ export function createLabServer(options: {
   operatorToken?: string;
 }) {
   const broker = new Broker(options.directory);
+  const life = new LifeCenter(options.directory);
   const operatorToken =
     options.operatorToken ?? randomBytes(32).toString("base64url");
   const server = createServer(async (req, res) => {
@@ -107,7 +109,11 @@ export function createLabServer(options: {
           service: "eidos-tv-sdk",
           version: "0.1.0",
         });
-      if (url.pathname.startsWith("/api") || url.pathname === "/mcp") {
+      if (
+        url.pathname.startsWith("/api") ||
+        url.pathname === "/mcp" ||
+        url.pathname === "/life-mcp"
+      ) {
         const token = req.headers.authorization?.replace(/^Bearer /, "") ?? "";
         const operator = equal(token, operatorToken);
         let grant: ReturnType<Broker["authenticate"]> | undefined;
@@ -117,6 +123,61 @@ export function createLabServer(options: {
           } catch {
             return json(res, 401, { error: "UNAUTHORIZED" });
           }
+        }
+        if (url.pathname === "/api/life" || url.pathname === "/life-mcp") {
+          if (!operator) return json(res, 403, { error: "OPERATOR_REQUIRED" });
+          if (url.pathname === "/api/life") {
+            if (req.method === "GET") return json(res, 200, life.observe());
+            if (req.method !== "POST")
+              return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
+            const action = z
+              .object({ name: z.string(), input: z.unknown() })
+              .strict()
+              .parse(await body(req));
+            return json(res, 200, life.call(action.name, action.input));
+          }
+          if (req.method !== "POST")
+            return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+            enableJsonResponse: true,
+          });
+          const mcp = new Server(
+            { name: "eidos-life-center", version: "0.1.0" },
+            { capabilities: { tools: {} } },
+          );
+          mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
+            tools: lifeTools,
+          }));
+          mcp.setRequestHandler(CallToolRequestSchema, async (request) => {
+            try {
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(
+                      life.call(
+                        request.params.name,
+                        request.params.arguments ?? {},
+                      ),
+                    ),
+                  },
+                ],
+              };
+            } catch (e) {
+              return {
+                isError: true,
+                content: [{ type: "text", text: (e as Error).message }],
+              };
+            }
+          });
+          res.on("close", () => {
+            void transport.close();
+            void mcp.close();
+          });
+          await mcp.connect(transport);
+          await transport.handleRequest(req, res, await body(req));
+          return;
         }
         if (url.pathname === "/mcp") {
           if (operator) return json(res, 403, { error: "USE_SESSION_GRANT" });
@@ -278,7 +339,9 @@ export function createLabServer(options: {
         base,
         "." +
           decodeURIComponent(
-            url.pathname === "/" || url.pathname === "/agent"
+            url.pathname === "/" ||
+              url.pathname === "/agent" ||
+              url.pathname === "/home"
               ? "/index.html"
               : url.pathname,
           ),

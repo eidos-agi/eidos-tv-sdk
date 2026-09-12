@@ -1,6 +1,14 @@
-# Product North Star — Device Lab
+# Product North Star — Personal AI Life Center
 
-The first release should feel like an instrument panel for testing agents against a virtual television, not like a demo page.
+Daniel is the first user. The TV is the home interface to a personal AI system: requests, briefings, delegated work, decisions, and results. The person can continue with the same system when traveling. Entertainment is not the purpose of this product.
+
+Develop locally for fast iteration. Make remote navigation and voice interaction convincing. Use explicitly labeled simulated workers to test the experience before connecting real agents and cloud systems. Keep identity, memory, and jobs independent of the TV client; eventual clients may include Roku and Android TV. No compatibility with those platforms is implied by the web emulator.
+
+The next acceptance experience is: open the Life Center, submit an instruction with voice or text, see it delegated, review its result with the remote, and find the job still available after leaving and returning. A mocked worker proves interaction and orchestration shape, not real AI capability or cloud execution.
+
+## Supporting device lab
+
+The device lab remains the instrument panel for testing input, permissions, and device behavior alongside the Life Center experience.
 
 The approved product shape is the Device Lab mockup: a TV in the center, a visible remote beside it, scenario and fault controls on the left, an agent runner and hidden evaluator on the right, and trace/capture/PTT tooling below the TV.
 

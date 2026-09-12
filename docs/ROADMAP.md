@@ -1,6 +1,6 @@
 # Roadmap
 
-The roadmap is ordered to prove the architecture early. Do not begin by reproducing vendor visuals or integrating real speech providers. First prove that one canonical action path can support humans, WebMCP agents, MCP agents, replay, and grading.
+The product priority is now a personal AI Life Center for Daniel, developed locally with realistic remote and voice interaction. See [the updated North Star](NORTH_STAR.md) and [Life Center implementation](LIFE_CENTER.md). The device-lab milestones below remain supporting infrastructure; entertainment benchmarks are not the product acceptance criteria.
 
 ## Current delivery — 2026-09-12
 
@@ -396,3 +396,6 @@ Until M0–M7 are solid, do not spend meaningful time on:
 - real hardware farms.
 
 The product is the **control/evaluation architecture**, not the skins.
+# Updated product priority — September 12, 2026
+
+The primary experience is a personal AI Life Center for Daniel, with a realistic local TV/remote client. The device lab supports this work. See [North Star](NORTH_STAR.md) and [Life Center](LIFE_CENTER.md). Prioritize requests, delegated work, decisions, persistence, and eventual portable personal context over entertainment benchmarks. Local simulated jobs are the first experience milestone; real agents, scoped identity, cloud workers, and native TV clients remain subsequent milestones.

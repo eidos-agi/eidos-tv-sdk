@@ -10,6 +10,7 @@ import type { AuthorityMode, RemoteKey, TvState } from "@eidos-tv/protocol";
 import { registerWebMCP } from "./webmcp";
 import { download, snapshot, record } from "./capture";
 import "./styles.css";
+import { LifeApp } from "./life";
 const fragment = new URLSearchParams(location.hash.slice(1));
 const operatorToken = fragment.get("operator");
 const agentToken = fragment.get("agent");
@@ -1221,4 +1222,18 @@ function Field({
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  location.pathname === "/home" ? (
+    <LifeApp />
+  ) : (
+    <>
+      <a
+        style={{ display: "block", padding: "10px 24px", color: "#cfe5ad" }}
+        href={`/home${location.hash}`}
+      >
+        Open Life Center →
+      </a>
+      <App />
+    </>
+  ),
+);
