@@ -29,6 +29,17 @@ export function LifeApp() {
   const actionPending = useRef(false);
   const generation = useRef(0);
   const [webmcp, setWebmcp] = useState("");
+  const jobList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (view && view.focus >= 3) {
+      const item = jobList.current?.children[view.focus - 3] as
+        HTMLElement | undefined;
+      if (item && jobList.current)
+        jobList.current.scrollTop =
+          item.offsetTop -
+          (jobList.current.children[0] as HTMLElement).offsetTop;
+    }
+  }, [view?.focus]);
   async function api(name?: string, input?: unknown) {
     const r = await fetch("/api/life", {
       method: name ? "POST" : "GET",
@@ -218,7 +229,7 @@ export function LifeApp() {
                   in progress
                 </span>
               </div>
-              <div className="life-jobs">
+              <div className="life-jobs" ref={jobList}>
                 {!view.jobs.length && (
                   <p>Nothing waiting yet. Start with a request above.</p>
                 )}
