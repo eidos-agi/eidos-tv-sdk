@@ -2,6 +2,16 @@
 
 An agent-native SDK and browser lab for emulating televisions, remotes, push-to-talk voice interactions, and other remote-controlled consumer interfaces.
 
+## Run it
+
+```sh
+npm ci
+npm run build
+npm start
+```
+
+Open the operator URL printed at startup. This runs a shared local TV session with a browser remote, HTTP/stdio MCP adapters, WebMCP registration, 13 scenarios, fault injection, capture and deterministic replay. See [running and connecting agents](docs/RUNNING.md) and [verified implementation status](docs/IMPLEMENTATION-STATUS.md).
+
 ## What this is
 
 Eidos TV SDK is not a firmware clone or a DRM/device-certification emulator. It models the observable behavior and interaction surface of TVs and their peripherals so humans and AI agents can operate them, test against them, and be objectively evaluated.

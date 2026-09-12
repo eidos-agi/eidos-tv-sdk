@@ -2,6 +2,12 @@
 
 The roadmap is ordered to prove the architecture early. Do not begin by reproducing vendor visuals or integrating real speech providers. First prove that one canonical action path can support humans, WebMCP agents, MCP agents, replay, and grading.
 
+## Current delivery — 2026-09-12
+
+The generic lab now has a shared session server, schema-validated action dispatcher, real authority checks, HTTP and stdio MCP adapters, browser WebMCP registration, 13 fixtures, evaluator isolation from agent APIs, persistent traces, deterministic replay, PNG snapshots and WebM recording. See [implementation status](IMPLEMENTATION-STATUS.md) for evidence and limits.
+
+The original M0–M11 below remains the complete roadmap. This delivery does **not** close every M0–M7 item: screenshot anchors in trace files, stale/delayed-render faults, model/token/cost metrics, a general scenario-authoring/import schema and an isolated pixels-only harness still remain. M8–M11 are not implemented.
+
 ## Definition of "working"
 
 The first shippable proof is complete when a browser user and an external agent can both enter the same virtual room, operate the same virtual remote, hold/release PTT, drive a virtual TV through canonical events, reset the world, replay the run, and receive an objective pass/fail result without access to hidden oracle state.
@@ -19,9 +25,10 @@ The first shippable proof is complete when a browser user and an external agent 
 - [x] WebMCP and MCP defined as adapters over shared functions.
 - [x] PTT lifecycle defined.
 - [x] Authority profiles defined.
-- [ ] Create TypeScript workspace.
-- [ ] Add schema validation for action/device/scenario contracts.
-- [ ] Add CI for typecheck, unit tests, lint, and build.
+- [x] Create TypeScript workspace.
+- [x] Add runtime validation for tool inputs, session config and replay imports.
+- [ ] General device-pack and user-authored scenario contract validation.
+- [x] Add CI for typecheck, formatting, core/API tests, build and browser acceptance.
 
 **Gate:** contracts can be imported by every package with no browser dependency.
 

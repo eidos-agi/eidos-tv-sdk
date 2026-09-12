@@ -93,21 +93,50 @@ try {
     pass(`Browser benchmark: ${scenario}`);
   }
   await page.getByLabel("Scenario", { exact: true }).selectOption("play-bluey");
-  // Cancel while the runner's first reset is delayed, then verify no late grant or action survives.
+  // Hold the first reset until the user's reset completes. No timing assumptions.
+  let count = 0;
+  let releaseFirst!: () => void;
+  let sawFirst!: () => void;
+  let firstDone!: () => void;
+  const release = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  const seen = new Promise<void>((resolve) => {
+    sawFirst = resolve;
+  });
+  const done = new Promise<void>((resolve) => {
+    firstDone = resolve;
+  });
   await page.route("**/api/sessions/*/reset", async (route) => {
-    await new Promise((r) => setTimeout(r, 100));
+    const first = ++count === 1;
+    if (first) {
+      sawFirst();
+      await release;
+    }
     await route.continue();
+    if (first) firstDone();
   });
   await page
     .getByRole("button", { name: "Start test run", exact: true })
     .click();
+  await seen;
+  const secondResponse = page.waitForResponse((response) =>
+    response.url().endsWith("/reset"),
+  );
   await page
     .getByRole("button", { name: "Reset session", exact: true })
     .click();
+  await secondResponse;
+  const firstResponse = page.waitForResponse((response) =>
+    response.url().endsWith("/reset"),
+  );
+  releaseFirst();
+  await done;
+  await firstResponse;
+  await page.unrouteAll({ behavior: "wait" });
   await expect(
     page.getByRole("button", { name: "Start test run", exact: true }),
   ).toBeEnabled();
-  await page.unrouteAll({ behavior: "wait" });
   await expect
     .poll(() => [...lab.broker.sessions.values()][0].actions.length)
     .toBe(0);
