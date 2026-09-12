@@ -1,6 +1,6 @@
 # Roadmap
 
-The roadmap is ordered to prove the architecture early. Do not begin by reproducing vendor visuals or integrating real speech providers. First prove that one canonical action path can support humans, WebMCP agents, MCP agents, replay, and grading.
+The product priority is now a personal AI Life Center for Daniel, developed locally with realistic remote and voice interaction. See [the updated North Star](NORTH_STAR.md) and [Life Center implementation](LIFE_CENTER.md). The device-lab milestones below remain supporting infrastructure; entertainment benchmarks are not the product acceptance criteria.
 
 ## Current delivery — 2026-09-12
 
