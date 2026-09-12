@@ -321,3 +321,24 @@ test("takeover clears held keys and cancels delayed PTT without a late transitio
     await lab.close();
   }
 });
+
+test("late reset is rejected without replacing the newer session", async () => {
+  const lab = await setup();
+  try {
+    const id = lab.broker.create();
+    const first = lab.broker.projection(id);
+    lab.broker.reset(
+      id,
+      { ...first.config, authority: "semantic" },
+      first.revision,
+    );
+    const response = await req(lab, `/api/sessions/${id}/reset`, {
+      ...first.config,
+      revision: first.revision,
+    });
+    assert.equal(response.status, 400);
+    assert.equal(lab.broker.session(id).config.authority, "semantic");
+  } finally {
+    await lab.close();
+  }
+});

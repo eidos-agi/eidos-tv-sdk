@@ -32,13 +32,13 @@ At application commit `b411091`:
 
 Fleet verification receipt: `780e998c4640c64a22a3b1d200c2403803cfe55f8844a3d6aa14120ce49a6b91`, terminal status `succeeded`, exit 0. Browser evidence is in `qa-artifacts/` on the verification checkout and uploaded by CI on every run.
 
-The browser suite proves remote episode selection, pointer PTT, semantic and remote runners, eight recovery/help scenarios, cancellation during a reset, actual capture downloads, trace replay, a second browser operating the same TV, and denial after revocation. GitHub Linux CI exposed a race in the browser test’s delayed-request teardown; that test now uses explicit request barriers.
+The browser suite proves remote episode selection, pointer PTT, semantic and remote runners, eight recovery/help scenarios, cancellation during a reset, actual capture downloads, trace replay, a second browser operating the same TV, and denial after revocation. GitHub Linux CI exposed delayed-request teardown and a stale-reset race. The test now uses explicit request barriers; server reset operations reject stale revisions, and configuration changes disable Start until committed.
 
 ### Remaining boundaries
 
 - BRS/BrightScript execution and additional vendor device packs are not implemented.
 - Recorded/live microphone capture and speech-provider integration are not implemented.
-- The scripted runner is not an AI model. Native WebMCP availability depends on the browser; adapter registration/dispatch/cleanup has a contract test.
+- The scripted runner is not an AI model. Native WebMCP availability depends on the browser; adapter registration/dispatch/cleanup has a contract test. Native registration of 15 remote tools was verified on Mac Chrome 152.0.7977.83 with its WebMCP feature enabled (Fleet receipt `f25bb1cd9fdfb3e7b2681c96960dd5e2a7438c73dba1b4d50704a0795dc5fddb`).
 - The rendered-remote profile has no advertised tools, but is not a hardened pixels-only model harness. Do not give an evaluated visual agent DOM/network/operator access and claim it is seeing only pixels.
 - MCP is local HTTP/stdio. A hosted ChatGPT/Claude connector with OAuth and durable remote deployment remains separate work.
 - Capture files are downloaded separately; screenshot anchors are not yet embedded in trace JSON.

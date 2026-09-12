@@ -111,8 +111,11 @@ export class Broker {
       if (g.sessionId === id) this.grants.delete(key);
     this.leases.delete(id);
   }
-  reset(id: string, config: SessionConfig) {
+  reset(id: string, config: SessionConfig, revision?: number) {
     this.session(id);
+    if (revision !== undefined && revision !== (this.revisions.get(id) ?? 1))
+      throw Error("STALE_SESSION");
+    configSchema.parse(config);
     this.revoke(id);
     writeFileSync(
       join(this.directory, `${randomUUID()}.json`),

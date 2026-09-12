@@ -70,6 +70,7 @@ function App() {
   const [confidence, setConfidence] = useState(0.92);
   const [query, setQuery] = useState("Bluey");
   const [running, setRunning] = useState(false);
+  const [configuring, setConfiguring] = useState(false);
   const generation = useRef(0);
   const [progress, setProgress] = useState<string[]>([]);
   const [grant, setGrant] = useState<string>();
@@ -247,6 +248,7 @@ function App() {
   }, []);
   async function reset(patch: Record<string, unknown> = {}) {
     const gen = ++generation.current;
+    setConfiguring(true);
     setRunning(false);
     setProgress([]);
     ptt.current = undefined;
@@ -254,19 +256,34 @@ function App() {
     runnerToken.current = undefined;
     setReplayTv(undefined);
     setError("");
-    const v = viewRef.current!;
-    const fresh = await api(`/sessions/${v.id}/reset`, {
-      ...v.config,
-      ...(patch.scenarioId
-        ? {
-            faults: Object.fromEntries(
-              Object.keys(v.config!.faults).map((key) => [key, false]),
-            ),
-          }
-        : {}),
-      ...patch,
-    });
-    if (gen === generation.current) show(fresh);
+    const apply = (v: View) =>
+      api(`/sessions/${v.id}/reset`, {
+        ...v.config,
+        ...(patch.scenarioId
+          ? {
+              faults: Object.fromEntries(
+                Object.keys(v.config!.faults).map((key) => [key, false]),
+              ),
+            }
+          : {}),
+        ...patch,
+        revision: v.revision,
+      });
+    try {
+      let fresh: View;
+      try {
+        fresh = await apply(viewRef.current!);
+      } catch (e) {
+        if (gen !== generation.current) return;
+        if ((e as Error).message !== "STALE_SESSION") throw e;
+        const current = await api(`/sessions/${viewRef.current!.id}`);
+        if (gen !== generation.current) return;
+        fresh = await apply(current);
+      }
+      if (gen === generation.current) show(fresh);
+    } finally {
+      if (gen === generation.current) setConfiguring(false);
+    }
   }
   async function makeGrant() {
     const gen = generation.current;
@@ -280,7 +297,7 @@ function App() {
     return g.token as string;
   }
   async function run() {
-    if (running || !view?.config) return;
+    if (running || configuring || !view?.config) return;
     const gen = ++generation.current;
     setRunning(true);
     setProgress([]);
@@ -288,7 +305,10 @@ function App() {
     const id = view.id;
     let auth: string | undefined;
     try {
-      const fresh = await api(`/sessions/${id}/reset`, view.config);
+      const fresh = await api(`/sessions/${id}/reset`, {
+        ...view.config,
+        revision: view.revision,
+      });
       if (gen !== generation.current) throw Error("RUN_CANCELLED");
       show(fresh);
       auth = await makeGrant();
@@ -381,7 +401,11 @@ function App() {
       }
       await step("tv.observe");
     } catch (e) {
-      if ((e as Error).message !== "RUN_CANCELLED") fail(e);
+      if (
+        gen === generation.current &&
+        (e as Error).message !== "RUN_CANCELLED"
+      )
+        fail(e);
     } finally {
       if (gen === generation.current) {
         await api(`/sessions/${id}/takeover`, {}).catch(fail);
@@ -832,7 +856,7 @@ function App() {
                 </p>
                 <button
                   className="secondary full"
-                  disabled={running}
+                  disabled={running || configuring}
                   onClick={() => void makeGrant().catch(fail)}
                 >
                   Issue agent grant

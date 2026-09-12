@@ -259,7 +259,8 @@ export function createLabServer(options: {
               return json(res, 200, { ok: true });
             }
             if (action === "reset" && req.method === "POST") {
-              broker.reset(id, await body(req));
+              const { revision, ...config } = await body(req);
+              broker.reset(id, config, revision);
               return json(res, 200, broker.projection(id));
             }
             if (action === "trace" && req.method === "GET")
