@@ -1,20 +1,15 @@
 {
-  "name": "@eidos-tv/core",
+  "name": "@eidos-tv/server",
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts",
-    "./tv": "./src/tv.ts"
-  },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@eidos-tv/core": "0.0.1",
     "@eidos-tv/protocol": "0.0.1",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^4.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.7.2"
   }
 }

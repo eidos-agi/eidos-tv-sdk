@@ -11,6 +11,7 @@
   "dependencies": {
     "@eidos-tv/core": "0.0.1",
     "@eidos-tv/protocol": "0.0.1",
+    "html-to-image": "^1.11.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
