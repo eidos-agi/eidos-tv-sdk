@@ -1,5 +1,13 @@
 # Implementation status
 
+## Application workloads — current integration
+
+The TV testing lab is the product. An application selector now offers Streaming TV and the Life Center example within the same lab. Four additional fixtures cover job requests, PTT instructions, cancellation, and offline workers, for 17 total scenarios.
+
+Both built-in applications use the canonical session dispatcher, session grants, supported faults, operator-only evaluation, saved traces, capture, and deterministic replay. Example jobs advance only through the lab's logical clock. The standalone example UI and its operator-only API have been retired; old standalone data is preserved on disk but is not loaded as a lab run.
+
+The built-in application contract is documented in [APPLICATIONS.md](APPLICATIONS.md). Arbitrary application loading, real AI workers, live microphone/STT integration, and native TV platform compatibility remain open. Earlier verification receipts below describe their original commits; current validation commands are `npm run verify`, `npm run test:browser`, and `npm run test:life`.
+
 ## 2026-09-12 — Shared Device Lab
 
 The lab now runs against one local session service. Human UI, a second agent browser, WebMCP registration, HTTP MCP and the stdio MCP proxy all reach the same permission checks and dispatcher.

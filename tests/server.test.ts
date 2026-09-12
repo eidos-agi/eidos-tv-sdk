@@ -379,6 +379,20 @@ test("application MCP shares session state, replays jobs and revokes on applicat
     ).json();
     assert.equal(restored.observation.tv.life.jobs[0].status, "completed");
     assert.equal(trace.finalStateHash, restored.result.finalStateHash);
+    const currentGrant = await (
+      await req(lab, `/api/sessions/${session.id}/grant`, {})
+    ).json();
+    assert.equal(
+      (
+        await req(
+          lab,
+          `/api/sessions/${session.id}`,
+          undefined,
+          currentGrant.token,
+        )
+      ).status,
+      200,
+    );
     assert.equal(
       (await req(lab, "/api/life", undefined, lab.operatorToken)).status,
       410,
@@ -391,8 +405,14 @@ test("application MCP shares session state, replays jobs and revokes on applicat
     ).json();
     assert.equal(switched.observation.tv.life, undefined);
     assert.equal(
-      (await req(lab, `/api/sessions/${session.id}`, undefined, grant.token))
-        .status,
+      (
+        await req(
+          lab,
+          `/api/sessions/${session.id}`,
+          undefined,
+          currentGrant.token,
+        )
+      ).status,
       401,
     );
   } finally {
