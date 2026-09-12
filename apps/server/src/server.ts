@@ -229,6 +229,7 @@ export function createLabServer(options: {
                   p.name,
                   p.input,
                   p.requestId,
+                  p.revision,
                 )
               : broker.agentCall(
                   token,

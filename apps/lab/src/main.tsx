@@ -257,6 +257,13 @@ function App() {
     const v = viewRef.current!;
     const fresh = await api(`/sessions/${v.id}/reset`, {
       ...v.config,
+      ...(patch.scenarioId
+        ? {
+            faults: Object.fromEntries(
+              Object.keys(v.config!.faults).map((key) => [key, false]),
+            ),
+          }
+        : {}),
       ...patch,
     });
     if (gen === generation.current) show(fresh);
