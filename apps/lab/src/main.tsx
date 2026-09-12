@@ -326,10 +326,10 @@ function App() {
         await step("remote.type", { text: "The Wild Robot" });
       else {
         await step("remote.press", { key: "HOME" });
-        if (mode === "semantic") {
+        if (mode === "semantic" && scenario !== "dropped-key") {
           await step("tv.launchApp", { appId: "video" });
           await step("tv.openContent", { contentId: "bluey", episode: 3 });
-        } else {
+        } else if (scenario !== "dropped-key") {
           const sessionId = uid();
           await step("remote.pttStart", { sessionId });
           await step("remote.pttSpeak", {

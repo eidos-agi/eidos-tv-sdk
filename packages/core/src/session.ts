@@ -346,7 +346,8 @@ export class Session {
       if (old.error) throw Error(old.error);
       return structuredClone(old.value);
     }
-    if (this.actions.length >= 1000) throw Error("ACTION_LIMIT");
+    if (this.actions.length >= 1000 && name !== "session.release")
+      throw Error("ACTION_LIMIT");
     const record: RecordedAction = {
       id,
       actor: structuredClone(actor),
@@ -496,7 +497,11 @@ export class Session {
               this.held.add(p.key);
               this.log("remote.down", actor.id, p.key);
             }
-            if (this.config.faults.drop && this.one("drop"))
+            if (
+              this.config.faults.drop &&
+              !["HOME", "POWER"].includes(p.key) &&
+              this.one("drop")
+            )
               this.log("fault.injected", actor.id, `dropped ${p.key}`);
             else {
               const count =
@@ -548,7 +553,7 @@ export function replay(file: TraceFile, through = file.actions.length) {
   if (
     file.version !== 1 ||
     !Array.isArray(file.actions) ||
-    file.actions.length > 1000
+    file.actions.length > 1001
   )
     throw Error("INVALID_TRACE");
   const session = new Session(configSchema.parse(file.config));

@@ -71,6 +71,7 @@ try {
   pass("Semantic agent completes through semantic tools");
   for (const scenario of [
     "low-confidence",
+    "dropped-key",
     "app-crash",
     "network",
     "profile",
@@ -106,7 +107,7 @@ try {
   await expect(
     page.getByRole("button", { name: "Start test run", exact: true }),
   ).toBeEnabled();
-  await page.unroute("**/api/sessions/*/reset");
+  await page.unrouteAll({ behavior: "wait" });
   await expect
     .poll(() => [...lab.broker.sessions.values()][0].actions.length)
     .toBe(0);

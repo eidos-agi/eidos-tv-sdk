@@ -47,7 +47,7 @@ const traceSchema = z
           })
           .strict(),
       )
-      .max(1000),
+      .max(1001),
     finalStateHash: z.string().regex(/^[\da-f]{8}$/),
   })
   .strict();

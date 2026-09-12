@@ -252,6 +252,10 @@ for (const scenario of SCENARIOS)
         case "purchase":
           call(s, "session.requestHelp", { reason: "Human approval required" });
           break;
+        case "dropped-key":
+          navigate(s);
+          assert.ok(s.trace.some((e) => e.type === "fault.injected"));
+          break;
         default:
           voice(s);
           if (!evaluate(s).success) navigate(s);
