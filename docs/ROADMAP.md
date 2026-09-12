@@ -1,6 +1,14 @@
 # Roadmap
 
-The product priority is now a personal AI Life Center for Daniel, developed locally with realistic remote and voice interaction. See [the updated North Star](NORTH_STAR.md) and [Life Center implementation](LIFE_CENTER.md). The device-lab milestones below remain supporting infrastructure; entertainment benchmarks are not the product acceptance criteria.
+The product is the TV testing lab: realistic TV/remote interaction, multiple applications and scenarios, and agents connecting through the remote or directly to the TV system. Life Center is one example workload, not the product. See [North Star](NORTH_STAR.md) and [example boundaries](LIFE_CENTER.md).
+
+## Next priority: applications under test
+
+- Add a common application selector and application adapter contract to the lab.
+- Integrate Life Center as one selectable example alongside existing media scenarios.
+- Route each example through the lab's shared input, authority, observation, fault, trace, and replay facilities. The separate Life Center preview does not yet satisfy this integration.
+- Support mocked and real agent backends per scenario, with explicit labels and test outcomes.
+- Keep fast local testing and realistic remote/voice interaction as acceptance requirements.
 
 ## Current delivery — 2026-09-12
 
@@ -398,4 +406,4 @@ Until M0–M7 are solid, do not spend meaningful time on:
 The product is the **control/evaluation architecture**, not the skins.
 # Updated product priority — September 12, 2026
 
-The primary experience is a personal AI Life Center for Daniel, with a realistic local TV/remote client. The device lab supports this work. See [North Star](NORTH_STAR.md) and [Life Center](LIFE_CENTER.md). Prioritize requests, delegated work, decisions, persistence, and eventual portable personal context over entertainment benchmarks. Local simulated jobs are the first experience milestone; real agents, scoped identity, cloud workers, and native TV clients remain subsequent milestones.
+The TV testing lab is the primary product. Life Center supplies one family of personal-AI test cases; media and other applications supply others. Generalize the lab rather than building a standalone personal-AI product in this repository.

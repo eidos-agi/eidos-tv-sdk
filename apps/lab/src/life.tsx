@@ -176,7 +176,7 @@ export function LifeApp() {
     <main className="life-shell">
       <header className="life-top">
         <strong>EIDOS / LIFE CENTER</strong>
-        <span>Local preview · Simulated workers</span>
+        <span>Example application · Simulated workers</span>
         <a href={`/${location.hash}`}>Device lab</a>
       </header>
       <div className="life-layout">

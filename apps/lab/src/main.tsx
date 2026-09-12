@@ -1231,7 +1231,7 @@ createRoot(document.getElementById("root")!).render(
         style={{ display: "block", padding: "10px 24px", color: "#cfe5ad" }}
         href={`/home${location.hash}`}
       >
-        Open Life Center →
+        Example app: Life Center →
       </a>
       <App />
     </>

@@ -1,6 +1,6 @@
-# Personal AI Life Center
+# Example Application — Life Center
 
-Open the operator URL printed by `npm start`, then choose **Open Life Center**. The `/home` route keeps the operator fragment. The original device lab is available from its header.
+Life Center is one test application for the TV testing lab, not the product itself. Open the operator URL printed by `npm start`, then choose **Example app: Life Center**. The `/home` route keeps the operator fragment. Return to the main testing lab from its header. This preview has a separate dispatcher and persistence model; common lab scenario/fault/trace/replay integration is still pending.
 
 The local preview supports remote arrows, OK, Back, Home, and screen power; keyboard arrows/Enter/Escape when focus is outside a form; request submission; job cancellation; and result review. Browser speech recognition is optional and requires browser microphone permission. The transcript is reviewed before sending. Browser speech services may process audio remotely; this is not an offline STT implementation. No microphone capture is started automatically.
 
