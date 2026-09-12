@@ -272,3 +272,15 @@ test("bounded deterministic key fuzz never escapes focus and volume constraints"
     stateHash(s.snapshot()),
   );
 });
+
+test("cancelling a purchase or PIN prompt cannot unlock the gated title", () => {
+  for (const scenarioId of ["purchase", "parental-pin"]) {
+    const s = new Session({ scenarioId, authority: "semantic" });
+    key(s, "HOME");
+    voice(s);
+    assert.notEqual(s.snapshot().playback.state, "playing");
+    key(s, "BACK");
+    call(s, "tv.openContent", { contentId: "bluey", episode: 3 });
+    assert.notEqual(s.snapshot().playback.state, "playing");
+  }
+});

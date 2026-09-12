@@ -228,6 +228,9 @@ export class Session {
   snapshot() {
     return structuredClone(this.tv);
   }
+  get needsRelease() {
+    return !!this.ptt || this.held.size > 0;
+  }
   get timeMs() {
     return this.clock;
   }

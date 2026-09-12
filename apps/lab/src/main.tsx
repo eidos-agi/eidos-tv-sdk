@@ -1174,11 +1174,14 @@ function Field({
   label: string;
   children: React.ReactNode;
 }) {
+  const id = React.useId();
   return (
-    <label className="field">
-      <span>{label}</span>
-      {children}
-    </label>
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      {React.cloneElement(children as React.ReactElement<{ id?: string }>, {
+        id,
+      })}
+    </div>
   );
 }
 createRoot(document.getElementById("root")!).render(<App />);

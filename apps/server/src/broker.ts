@@ -98,7 +98,7 @@ export class Broker {
   }
   revoke(id: string) {
     const s = this.sessions.get(id);
-    if (s?.snapshot().voice?.active) {
+    if (s?.needsRelease) {
       s.dispatch(
         { id: "operator", kind: "system", transport: "internal" },
         "session.release",

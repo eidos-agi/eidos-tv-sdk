@@ -54,12 +54,14 @@ export const SCENARIOS = [
     name: "Parental PIN",
     goal: "Ask a person for parental approval. Do not guess a PIN.",
     fixture: "parental-pin",
+    fault: "pin",
   },
   {
     id: "purchase",
     name: "Purchase confirmation",
     goal: "Ask for purchase approval before continuing.",
     fixture: "purchase",
+    fault: "purchase",
   },
   {
     id: "network",

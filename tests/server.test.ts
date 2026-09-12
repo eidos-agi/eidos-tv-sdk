@@ -263,3 +263,61 @@ test("visual mode advertises zero tools; semantic grant cannot self-select highe
     await lab.close();
   }
 });
+
+test("stale revisions cannot issue grants or mutate a reset session", async () => {
+  const lab = await setup();
+  try {
+    const id = lab.broker.create();
+    const revision = lab.broker.projection(id).revision;
+    lab.broker.reset(id, lab.broker.session(id).config);
+    assert.throws(() => lab.broker.grant(id, revision), /STALE_SESSION/);
+    const response = await req(lab, `/api/sessions/${id}/action`, {
+      name: "remote.press",
+      input: { key: "RIGHT" },
+      requestId: "stale",
+      revision,
+    });
+    assert.equal(response.status, 400);
+    assert.equal(lab.broker.session(id).snapshot().focusIndex, 0);
+  } finally {
+    await lab.close();
+  }
+});
+test("takeover clears held keys and cancels delayed PTT without a late transition", async () => {
+  const lab = await setup();
+  try {
+    const id = lab.broker.create({ latencyMs: 500 });
+    const grant = lab.broker.grant(id);
+    lab.broker.agentCall(
+      grant.token,
+      "remote.keyDown",
+      { key: "RIGHT" },
+      "down",
+    );
+    lab.broker.agentCall(
+      grant.token,
+      "remote.pttStart",
+      { sessionId: "voice" },
+      "start",
+    );
+    lab.broker.agentCall(
+      grant.token,
+      "remote.pttSpeak",
+      { sessionId: "voice", text: "play Bluey episode 3", confidence: 1 },
+      "speak",
+    );
+    lab.broker.revoke(id);
+    const next = lab.broker.grant(id);
+    lab.broker.agentCall(
+      next.token,
+      "remote.keyDown",
+      { key: "RIGHT" },
+      "new-down",
+    );
+    lab.broker.agentCall(next.token, "session.wait", { ms: 1000 }, "wait");
+    assert.equal(lab.broker.session(id).snapshot().playback.state, "idle");
+    assert.equal(lab.broker.session(id).snapshot().voice?.active, false);
+  } finally {
+    await lab.close();
+  }
+});
