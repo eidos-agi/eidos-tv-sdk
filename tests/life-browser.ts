@@ -69,6 +69,15 @@ try {
   console.log(
     "PASS second client shares state and pending jobs can be cancelled",
   );
+  for (let i = 0; i < 5; i++)
+    await page.getByRole("button", { name: "Right", exact: true }).click();
+  await expect(page.locator(".life-jobs article").last()).toHaveClass(
+    "life-focused",
+  );
+  await expect
+    .poll(() => page.locator(".life-jobs").evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  console.log("PASS remote focus scrolls the job list");
   await mkdir("qa-artifacts", { recursive: true });
   await page.screenshot({
     path: "qa-artifacts/life-desktop.png",
