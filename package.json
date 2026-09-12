@@ -7,11 +7,28 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @eidos-tv/lab",
-    "build": "npm run build -ws --if-present",
-    "typecheck": "npm run typecheck -ws --if-present"
+    "dev": "npm run build && npm start",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "start": "node --import tsx apps/server/src/main.ts",
+    "mcp": "node --import tsx apps/mcp/src/main.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "verify": "npm run typecheck && npm test && npm run build",
+    "test:browser": "node --import tsx tests/browser-smoke.ts",
+    "format:check": "prettier --check 'apps/*/src/**/*.{ts,tsx}' 'packages/*/src/**/*.ts' 'tests/*.ts'"
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.2",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.2"
+  },
+  "type": "module"
 }

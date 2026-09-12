@@ -109,6 +109,6 @@ A checked fault must be represented in the session configuration and appear in t
 
 ## Current implementation checkpoint
 
-The initial browser shell now implements the North-Star layout over the generic deterministic TV reducer. It includes a functional virtual remote, PTT fixture flow, network configuration, several fault injections, live trace, snapshot/video controls, a deterministic demo-agent harness, and hidden evaluator metrics.
+The approved layout now runs against a shared session service. Operator buttons, the scripted runner, an agent browser, WebMCP and external MCP converge at the same policy/dispatch boundary. Session grants cannot read evaluator output or change their authority. The operator can revoke control and reset; replay reconstructs saved runs separately from the live TV. PNG and WebM capture produce real downloaded artifacts.
 
-WebMCP, the external MCP server, declarative scenario files, replay persistence, and BRS runtime integration remain subsequent milestones; their UI positions should not be redesigned away while those backends are implemented.
+The agent panel accurately identifies the scripted fixture runner. No AI provider is auto-connected. BRS, real audio/STT and a hardened visual-only model harness remain on the roadmap and do not appear as working controls. See `RUNNING.md` for the local service and connection contract.
