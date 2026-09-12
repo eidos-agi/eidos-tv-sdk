@@ -4,7 +4,7 @@ The product is a realistic TV and remote testing lab. Daniel is the first user. 
 
 Life Center is one example application and test workload among many, alongside media navigation, voice-driven tasks, and other TV applications. Its personal-AI vision motivates a test case; it does not define the lab's product scope. Simulated responses are acceptable when clearly labeled. Eventual Roku or Android TV applications can be developed and validated through the lab; platform compatibility still requires separate proof.
 
-Success means a convincing TV/remote experience with configurable applications, scenarios, agent connections, input paths, observations, and repeatable tests. An application-specific demo must not replace the lab. The existing Life Center preview is currently a separate example route; integrating it into common scenario selection, faults, traces, and replay remains work to do.
+Success means a convincing TV/remote experience with configurable applications, scenarios, agent connections, input paths, observations, and repeatable tests. An application-specific demo must not replace the lab. Life Center is selectable within the lab and uses the shared session dispatcher, remote/PTT, permissions, logical clock, evaluator, faults, capture, traces, and replay. Its workers are simulated. General third-party application loading remains future work.
 
 ## Primary product: device lab
 

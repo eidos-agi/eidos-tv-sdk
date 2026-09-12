@@ -137,4 +137,4 @@ The first useful build should contain:
 See `docs/ARCHITECTURE.md` and `docs/ROADMAP.md` for the build contract.
 # Example application: Life Center
 
-The product is the TV testing lab. **Example app: Life Center** opens one experimental workload with remote navigation, voice/text requests, and simulated delegated jobs. Its separate preview route is not yet integrated into the lab's common scenario, fault, and replay controls. See [example setup and boundaries](docs/LIFE_CENTER.md).
+The product is the TV testing lab. Choose **Application under test** to switch between Streaming TV (13 scenarios) and Life Center (4 example scenarios). Both use the same lab controls, session grants, MCP/WebMCP actions, logical clock, evaluator, saved traces, and replay. See [example setup and boundaries](docs/LIFE_CENTER.md) and [application contract](docs/APPLICATIONS.md).

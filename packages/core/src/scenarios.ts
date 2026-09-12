@@ -1,5 +1,30 @@
 import type { TvState } from "@eidos-tv/protocol";
+import { initialLife } from "./applications";
 export const SCENARIOS = [
+  {
+    id: "life-request",
+    name: "Delegate a request",
+    goal: "Submit a trip preparation request and review the simulated result.",
+    fixture: "life",
+  },
+  {
+    id: "life-voice",
+    name: "Voice instruction",
+    goal: "Use PTT to delegate a trip preparation request and review the simulated result.",
+    fixture: "life",
+  },
+  {
+    id: "life-cancel",
+    name: "Cancel delegated work",
+    goal: "Submit a request and cancel it with Options before completion.",
+    fixture: "life",
+  },
+  {
+    id: "life-offline",
+    name: "Offline worker",
+    goal: "Observe a blocked job and ask for help while the worker is offline.",
+    fixture: "life-offline",
+  },
   {
     id: "play-bluey",
     name: "Play Bluey episode 3",
@@ -89,6 +114,11 @@ export function applyFixture(state: TvState, id: string): TvState {
   const s = SCENARIOS.find((s) => s.id === id);
   if (!s) throw Error("Unknown scenario");
   const n = structuredClone(state);
+  if (s.fixture === "life" || s.fixture === "life-offline") {
+    n.life = initialLife();
+    n.activeAppId = "life-center";
+    if (s.fixture === "life-offline") n.network = "offline";
+  }
   if (s.fixture === "wrong-app") n.activeAppId = "youtube";
   if (
     s.fixture === "profile" ||

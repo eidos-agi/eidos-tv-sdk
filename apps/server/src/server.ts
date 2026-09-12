@@ -15,7 +15,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { replay, SCENARIOS, configSchema } from "@eidos-tv/core";
 import { Broker } from "./broker";
-import { LifeCenter, lifeTools } from "./life";
+import { APPLICATIONS } from "@eidos-tv/core";
 const actionSchema = z
   .object({
     name: z.string().max(80),
@@ -75,7 +75,6 @@ export function createLabServer(options: {
   operatorToken?: string;
 }) {
   const broker = new Broker(options.directory);
-  const life = new LifeCenter(options.directory);
   const operatorToken =
     options.operatorToken ?? randomBytes(32).toString("base64url");
   const server = createServer(async (req, res) => {
@@ -124,61 +123,10 @@ export function createLabServer(options: {
             return json(res, 401, { error: "UNAUTHORIZED" });
           }
         }
-        if (url.pathname === "/api/life" || url.pathname === "/life-mcp") {
-          if (!operator) return json(res, 403, { error: "OPERATOR_REQUIRED" });
-          if (url.pathname === "/api/life") {
-            if (req.method === "GET") return json(res, 200, life.observe());
-            if (req.method !== "POST")
-              return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
-            const action = z
-              .object({ name: z.string(), input: z.unknown() })
-              .strict()
-              .parse(await body(req));
-            return json(res, 200, life.call(action.name, action.input));
-          }
-          if (req.method !== "POST")
-            return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
-          const transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: undefined,
-            enableJsonResponse: true,
-          });
-          const mcp = new Server(
-            { name: "eidos-life-center", version: "0.1.0" },
-            { capabilities: { tools: {} } },
-          );
-          mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
-            tools: lifeTools,
-          }));
-          mcp.setRequestHandler(CallToolRequestSchema, async (request) => {
-            try {
-              return {
-                content: [
-                  {
-                    type: "text",
-                    text: JSON.stringify(
-                      life.call(
-                        request.params.name,
-                        request.params.arguments ?? {},
-                      ),
-                    ),
-                  },
-                ],
-              };
-            } catch (e) {
-              return {
-                isError: true,
-                content: [{ type: "text", text: (e as Error).message }],
-              };
-            }
-          });
-          res.on("close", () => {
-            void transport.close();
-            void mcp.close();
-          });
-          await mcp.connect(transport);
-          await transport.handleRequest(req, res, await body(req));
-          return;
-        }
+        if (url.pathname === "/api/life" || url.pathname === "/life-mcp")
+          return json(res, 410, { error: "USE_LAB_SESSION_MCP" });
+        if (url.pathname === "/api/applications" && req.method === "GET")
+          return json(res, 200, APPLICATIONS);
         if (url.pathname === "/mcp") {
           if (operator) return json(res, 403, { error: "USE_SESSION_GRANT" });
           if (req.method !== "POST")

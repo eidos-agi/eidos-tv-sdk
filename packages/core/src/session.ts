@@ -2,6 +2,12 @@ import { z } from "zod";
 import type { AuthorityMode, TvState } from "@eidos-tv/protocol";
 import { applyFixture, SCENARIOS } from "./scenarios";
 import {
+  advanceLife,
+  submitLife,
+  applicationId,
+  APPLICATIONS,
+} from "./applications";
+import {
   createInitialTvState,
   reduceRemoteEvent,
   launchApp,
@@ -67,6 +73,9 @@ const empty = z.object({}).strict();
 const keySchema = z.object({ key: z.enum(KEYS) }).strict();
 const sid = z.string().min(1).max(100);
 export const TOOL_SCHEMAS = {
+  "tv.requestJob": z
+    .object({ text: z.string().trim().min(1).max(2000) })
+    .strict(),
   "session.release": empty,
   "tv.observe": empty,
   "remote.observe": empty,
@@ -144,13 +153,19 @@ const reads = new Set([
   "tv.getCapabilities",
   "tv.getPlayback",
 ]);
-export function toolNames(authority: AuthorityMode): ToolName[] {
+export function toolNames(
+  authority: AuthorityMode,
+  application = "media",
+): ToolName[] {
   if (authority === "human" || authority === "visual-only") return [];
   return (Object.keys(TOOL_SCHEMAS) as ToolName[]).filter(
     (n) =>
       n !== "session.release" &&
+      (application === "life-center"
+        ? !["tv.launchApp", "tv.openContent", "remote.shortcut"].includes(n)
+        : n !== "tv.requestJob") &&
       (authority === "semantic" ||
-        !["tv.launchApp", "tv.openContent"].includes(n)),
+        !["tv.launchApp", "tv.openContent", "tv.requestJob"].includes(n)),
   );
 }
 export function stateHash(value: unknown): string {
@@ -197,7 +212,13 @@ export class Session {
     });
     this.tv = applyFixture(createInitialTvState(), this.config.scenarioId);
     this.tv.network =
-      this.config.scenarioId === "network" ? "slow" : this.config.network;
+      this.config.scenarioId === "life-offline"
+        ? "offline"
+        : this.config.scenarioId === "network"
+          ? "slow"
+          : this.config.network;
+    if (this.tv.life && (this.config.faults.purchase || this.config.faults.pin))
+      throw Error("FAULT_NOT_SUPPORTED_BY_APPLICATION");
     const scenario = SCENARIOS.find((s) => s.id === this.config.scenarioId)!;
     if ("fault" in scenario) this.config.faults[scenario.fault] = true;
     this.random = this.config.seed;
@@ -369,11 +390,21 @@ export class Session {
             ? name.startsWith("remote.") ||
               name === "session.wait" ||
               name === "session.requestHelp"
-            : toolNames(this.config.authority).includes(name as ToolName);
+            : toolNames(
+                this.config.authority,
+                applicationId(this.config.scenarioId),
+              ).includes(name as ToolName);
       if (!allowed) throw Error("AUTHORITY_DENIED");
       const schema = TOOL_SCHEMAS[name as ToolName];
       if (!schema) throw Error("UNKNOWN_TOOL");
       const p = schema.parse(input) as Record<string, any>;
+      if (
+        this.tv.life &&
+        ["tv.launchApp", "tv.openContent", "remote.shortcut"].includes(name)
+      )
+        throw Error("APPLICATION_TOOL_UNAVAILABLE");
+      if (!this.tv.life && name === "tv.requestJob")
+        throw Error("APPLICATION_TOOL_UNAVAILABLE");
       if (!reads.has(name)) this.clock += 1;
       this.log("action.allowed", actor.id, name);
       let value: unknown;
@@ -383,9 +414,17 @@ export class Session {
       else if (name === "tv.getCapabilities")
         value = {
           id: "tv-1",
-          pack: "generic-streaming-tv",
-          apps: APPS.map((a) => ({ id: a.id, title: a.title })),
-          tools: toolNames(this.config.authority),
+          pack: "generic-tv",
+          application: APPLICATIONS.find(
+            (a) => a.id === applicationId(this.config.scenarioId),
+          ),
+          apps: this.tv.life
+            ? [{ id: "life-center", title: "Life Center (example)" }]
+            : APPS.map((a) => ({ id: a.id, title: a.title })),
+          tools: toolNames(
+            this.config.authority,
+            applicationId(this.config.scenarioId),
+          ),
         };
       else if (name === "remote.observe")
         value = {
@@ -414,7 +453,14 @@ export class Session {
           this.log("control.released", actor.id, "Pending input cancelled");
         } else if (name === "session.wait") {
           this.clock += p.ms;
+          if (this.tv.life)
+            this.transition(
+              advanceLife(this.tv, p.ms, this.config.faults.crash),
+              actor.id,
+            );
           this.deliver(actor.id);
+        } else if (name === "tv.requestJob") {
+          this.transition(submitLife(this.tv, p.text), actor.id);
         } else if (name === "session.requestHelp") {
           this.helpReason = p.reason;
           this.log("human.requested", actor.id, p.reason);
